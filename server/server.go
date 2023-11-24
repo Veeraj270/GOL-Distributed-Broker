@@ -221,14 +221,14 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 	clients = make([]*rpc.Client, threads)
 	errs := make([]error, threads)
 	address := make([]string, threads)
-	address[0] = "54.242.253.12:8040"
-	address[1] = "34.229.159.250:8040"
-	address[2] = "52.23.230.155:8040"
-	address[3] = "54.162.208.37:8040"
-	address[4] = "34.224.78.220:8040"
-	address[5] = "54.226.16.66:8040"
-	address[6] = "34.227.195.170:8040"
-	address[7] = "50.19.31.194:8040"
+	address[0] = "50.19.151.156:8040"
+	address[1] = "54.208.4.59:8040"
+	address[2] = "54.82.254.59:8040"
+	address[3] = "54.242.224.35:8040"
+	address[4] = "54.89.202.168:8040"
+	address[5] = "54.90.104.137:8040"
+	address[6] = "54.92.221.161:8040"
+	address[7] = "54.162.152.176:8040"
 
 	for i := 0; i < threads; i++ {
 
