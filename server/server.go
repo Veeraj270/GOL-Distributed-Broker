@@ -220,7 +220,7 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 
 	clients = make([]*rpc.Client, threads)
 	errs := make([]error, threads)
-	address := make([]string, threads)
+	address := make([]string, 8)
 	fmt.Println("NUMBER OF THREADS:",threads)
 	address[0] = "50.19.151.156:8040"
 	address[1] = "54.208.4.59:8040"
