@@ -206,7 +206,7 @@ func numberOfAliveCells(world [][]uint8, height, width int) int {
 //Removed threads arg as it was only needed for parallel
 func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 
-	//fmt.Println("-------------------------------------Remote Distributor Called------------------------------")
+	fmt.Println("-------------------------------------Remote Distributor Called------------------------------")
 
 	turnHundred = 0
 
@@ -221,6 +221,7 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 	clients = make([]*rpc.Client, threads)
 	errs := make([]error, threads)
 	address := make([]string, threads)
+	fmt.Println("NUMBER OF THREADS:",threads)
 	address[0] = "50.19.151.156:8040"
 	address[1] = "54.208.4.59:8040"
 	address[2] = "54.82.254.59:8040"
