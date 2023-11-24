@@ -234,7 +234,7 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 
 		//port := 8040 + (i * 10)
 		//address := "localhost:" + fmt.Sprint(port)
-		fmt.Println(address)
+		fmt.Println(address[i])
 		clients[i], errs[i] = rpc.Dial("tcp", address[i])
 		if errs[i] != nil {
 			fmt.Println("-----------Unable to connect--------------------")
