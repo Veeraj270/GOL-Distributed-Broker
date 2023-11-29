@@ -140,7 +140,6 @@ func numberOfAliveCells(world [][]uint8, height, width int) int {
 func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 
 	//fmt.Println("-------------------------------------Remote Distributor Called------------------------------")
-	threads = 1
 	turnHundred = 0
 
 	turn = 0
@@ -154,14 +153,14 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 	errs := make([]error, threads)
 	
 		address := make([]string, 8)
-		address[0] = "54.242.253.12:8040"
-		address[1] = "34.229.159.250:8040"
-		address[2] = "52.23.230.155:8040"
-		address[3] = "54.162.208.37:8040"
-		address[4] = "34.224.78.220:8040"
-		address[5] = "54.226.16.66:8040"
-		address[6] = "34.227.195.170:8040"
-		address[7] = "50.19.31.194:8040"
+		address[0] = "54.156.94.225:8030"
+		address[1] = "54.197.12.220:8030"
+		address[2] = "54.224.114.62:8030"
+		address[3] = "35.173.181.153:8030"
+		address[4] = "18.206.219.221:8030"
+		address[5] = "3.94.255.189:8030"
+		address[6] = "54.227.161.34:8030"
+		address[7] = "54.167.249.16:8030"
 	
 	for i := 0; i < threads; i++ {
 
