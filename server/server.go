@@ -109,73 +109,6 @@ func createWorldCopy(world [][]uint8) [][]uint8 {
 	return worldCopy
 }
 
-//Removed c DistributorChannels and turns *int as they were only needs for SDL
-func parallelCalculateNextState(worldCopy [][]uint8, startY, endY, height, width int) [][]uint8 {
-
-	//fmt.Println("--------NextStateCalculating------------")
-	worldSection := make([][]uint8, endY-startY)
-	for i := 0; i < (endY - startY); i++ {
-		worldSection[i] = make([]uint8, width)
-	}
-
-	for j := startY; j < endY; j++ {
-		for i := 0; i < width; i++ {
-			sum := 0
-			var neighbours [8]uint8
-			top := j - 1
-			bottom := j + 1
-			left := i - 1
-			right := i + 1
-			if top == -1 {
-				top = height - 1
-			}
-			if bottom == height {
-				bottom = 0
-			}
-			if left == -1 {
-				left = width - 1
-			}
-			if right == width {
-				right = 0
-			}
-			neighbours[0] = worldCopy[bottom][left]
-			neighbours[1] = worldCopy[bottom][i]
-			neighbours[2] = worldCopy[bottom][right]
-			neighbours[3] = worldCopy[j][left]
-			neighbours[4] = worldCopy[j][right]
-			neighbours[5] = worldCopy[top][left]
-			neighbours[6] = worldCopy[top][i]
-			neighbours[7] = worldCopy[top][right]
-
-			for _, n := range neighbours {
-				if n == 255 {
-					sum = sum + 1
-				}
-			}
-
-			if worldCopy[j][i] == 255 {
-				if sum < 2 {
-					worldSection[j-startY][i] = 0
-					//c.events <- CellFlipped{CompletedTurns: *turns, Cell: util.Cell{X: i, Y: j}}
-				} else if (sum == 2) || (sum == 3) {
-					worldSection[j-startY][i] = 255
-				} else if sum > 3 {
-					worldSection[j-startY][i] = 0
-					//c.events <- CellFlipped{CompletedTurns: *turns, Cell: util.Cell{X: i, Y: j}}
-				}
-			} else if worldCopy[j][i] == 0 {
-				if sum == 3 {
-					worldSection[j-startY][i] = 255
-					//c.events <- CellFlipped{CompletedTurns: *turns, Cell: util.Cell{X: i, Y: j}}
-				} else {
-					worldSection[j-startY][i] = 0
-				}
-			}
-		}
-	}
-	return worldSection
-}
-
 func calculateAliveCells(world [][]uint8, height int, width int) []util.Cell {
 	var newCell []util.Cell
 	for j := 0; j < height; j++ {
@@ -206,37 +139,36 @@ func numberOfAliveCells(world [][]uint8, height, width int) int {
 //Removed threads arg as it was only needed for parallel
 func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 
-	fmt.Println("-------------------------------------Remote Distributor Called------------------------------")
-
+	//fmt.Println("-------------------------------------Remote Distributor Called------------------------------")
+	threads = 1
 	turnHundred = 0
 
 	turn = 0
 	worldCopy = createWorldCopy(world)
 	height := len(world)
-	width := len(world[0])
 
 	chunkSize := height / threads
 	remainingChunk := height % threads
 
 	clients = make([]*rpc.Client, threads)
 	errs := make([]error, threads)
-	address := make([]string, 8)
-	fmt.Println("NUMBER OF THREADS:",threads)
-	address[0] = "50.19.151.156:8040"
-	address[1] = "54.208.4.59:8040"
-	address[2] = "54.82.254.59:8040"
-	address[3] = "54.242.224.35:8040"
-	address[4] = "54.89.202.168:8040"
-	address[5] = "54.90.104.137:8040"
-	address[6] = "54.92.221.161:8040"
-	address[7] = "54.162.152.176:8040"
-
+	/*
+		address := make([]string, 8)
+		address[0] = "54.242.253.12:8040"
+		address[1] = "34.229.159.250:8040"
+		address[2] = "52.23.230.155:8040"
+		address[3] = "54.162.208.37:8040"
+		address[4] = "34.224.78.220:8040"
+		address[5] = "54.226.16.66:8040"
+		address[6] = "34.227.195.170:8040"
+		address[7] = "50.19.31.194:8040"
+	*/
 	for i := 0; i < threads; i++ {
 
-		//port := 8040 + (i * 10)
-		//address := "localhost:" + fmt.Sprint(port)
-		fmt.Println(address[i])
-		clients[i], errs[i] = rpc.Dial("tcp", address[i])
+		port := 8040 + (i * 10)
+		address := "localhost:" + fmt.Sprint(port)
+		fmt.Println(address)
+		clients[i], errs[i] = rpc.Dial("tcp", address)
 		if errs[i] != nil {
 			fmt.Println("-----------Unable to connect--------------------")
 		}
@@ -272,13 +204,14 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 			if k < threads-remainingChunk {
 				Begin := k * chunkSize
 				End := (k + 1) * chunkSize
+				fmt.Println("Begin: ", Begin, " End: ", End)
+				fmt.Println("len(worldCopy[0]):", len(worldCopy[0]))
+				fmt.Println("len(worldCopy):", len(worldCopy))
 				bufferedSliceChan[k] = make(chan [][]uint8, 1)
 				request := stubs.WorkerRequest{
 					WorldCopy: worldCopy,
 					StartY:    Begin,
 					EndY:      End,
-					Height:    height,
-					Width:     width,
 				}
 				response := new(stubs.WorkerResponse)
 				go func(k int, request stubs.WorkerRequest, response *stubs.WorkerResponse, channel chan [][]uint8) {
@@ -297,8 +230,6 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 					WorldCopy: worldCopy,
 					StartY:    Begin,
 					EndY:      End,
-					Height:    height,
-					Width:     width,
 				}
 				response := new(stubs.WorkerResponse)
 				go func(k int, request stubs.WorkerRequest, response *stubs.WorkerResponse, channel chan [][]uint8) {
@@ -317,8 +248,6 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 					WorldCopy: worldCopy,
 					StartY:    Begin,
 					EndY:      End,
-					Height:    height,
-					Width:     width,
 				}
 				response := new(stubs.WorkerResponse)
 				go func(k int, request stubs.WorkerRequest, response *stubs.WorkerResponse, channel chan [][]uint8) {
@@ -332,13 +261,13 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 			}
 		}
 
-		//fmt.Println("STATES CALCULATED")
+		fmt.Println("STATES CALCULATED")
 		var parallelWorld [][]uint8
 
 		for i := 0; i < threads; i++ {
 			parallelWorld = append(parallelWorld, <-bufferedSliceChan[i]...)
 		}
-		//fmt.Println("DONE")
+		fmt.Println("DONE")
 
 		//fmt.Println("TURN ADVANCED")
 
@@ -440,7 +369,11 @@ func (r *RemoteProcessor) CallNumberOfAliveCells(request stubs.CellCountRequest,
 	for done != true {
 		if sync == true {
 			response.Turn = turn
-			response.CellCount = numberOfAliveCells(worldCopy, len(worldCopy), len(worldCopy[0]))
+			if turn == 0 {
+				response.CellCount = 0
+			} else {
+				response.CellCount = numberOfAliveCells(worldCopy, len(worldCopy), len(worldCopy[0]))
+			}
 			done = true
 		}
 	}
