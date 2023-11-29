@@ -152,7 +152,7 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 
 	clients = make([]*rpc.Client, threads)
 	errs := make([]error, threads)
-	/*
+	
 		address := make([]string, 8)
 		address[0] = "54.242.253.12:8040"
 		address[1] = "34.229.159.250:8040"
@@ -162,13 +162,13 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 		address[5] = "54.226.16.66:8040"
 		address[6] = "34.227.195.170:8040"
 		address[7] = "50.19.31.194:8040"
-	*/
+	
 	for i := 0; i < threads; i++ {
 
-		port := 8040 + (i * 10)
-		address := "localhost:" + fmt.Sprint(port)
-		fmt.Println(address)
-		clients[i], errs[i] = rpc.Dial("tcp", address)
+		//port := 8040 + (i * 10)
+		//address := "localhost:" + fmt.Sprint(port)
+		fmt.Println(address[i])
+		clients[i], errs[i] = rpc.Dial("tcp", address[i])
 		if errs[i] != nil {
 			fmt.Println("-----------Unable to connect--------------------")
 		}
