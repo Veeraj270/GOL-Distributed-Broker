@@ -23,83 +23,6 @@ var reset bool
 
 var clients []*rpc.Client
 
-/*
-func readAliveCounts(width, height int) map[int]int {
-	f, err := os.Open("check/alive/" + fmt.Sprintf("%vx%v.csv", width, height))
-	util.Check(err)
-	reader := csv.NewReader(f)
-	table, err := reader.ReadAll()
-	util.Check(err)
-	alive := make(map[int]int)
-	for i, row := range table {
-		if i == 0 {
-			continue
-		}
-		completedTurns, err := strconv.Atoi(row[0])
-		util.Check(err)
-		aliveCount, err := strconv.Atoi(row[1])
-		util.Check(err)
-		alive[completedTurns] = aliveCount
-	}
-	return alive
-}
-
-func TestAlive(t *testing.T) {
-	p := gol.Params{
-		Turns:       100000000,
-		Threads:     8,
-		ImageWidth:  512,
-		ImageHeight: 512,
-	}
-	alive := readAliveCounts(p.ImageWidth, p.ImageHeight)
-	events := make(chan gol.Event)
-	keyPresses := make(chan rune, 2)
-	go gol.Run(p, events, keyPresses)
-
-	implemented := make(chan bool)
-	go func() {
-		timer := time.After(5 * time.Second)
-		select {
-		case <-timer:
-			t.Fatal("no AliveCellsCount events received in 5 seconds")
-		case <-implemented:
-			return
-		}
-	}()
-
-	i := 0
-	timer := time.NewTicker(2 * time.Second)
-	for {
-		<-timer.C
-		var expected int
-		if turn <= 10000 {
-			expected = alive[turn]
-		} else if turn%2 == 0 {
-			expected = 5565
-		} else {
-			expected = 5567
-		}
-		actual := numberOfAliveCells(worldCopy, len(worldCopy), len(worldCopy[0]))
-		if expected != actual {
-			t.Fatalf("At turn %v expected %v alive cells, got %v instead", turn, expected, actual)
-		} else {
-			fmt.Printf("--------------------------------------------TURN:%d, CellCount:%d-------------------------------\n", turn, actual)
-			if i == 0 {
-				implemented <- true
-			}
-			i++
-		}
-
-		if i >= 5 {
-			keyPresses <- 'q'
-			return
-		}
-	}
-	t.Fatal("not enough AliveCellsCount events received")
-}
-
-*/
-
 func createWorldCopy(world [][]uint8) [][]uint8 {
 	worldCopy := make([][]uint8, len(world))
 	for i := range worldCopy {
@@ -135,13 +58,44 @@ func numberOfAliveCells(world [][]uint8, height, width int) int {
 	return sum
 }
 
+func createWorldCutCopy(world [][]uint8, startY, endY int) [][]uint8 {
+	numRows := endY - startY + 1
+	fmt.Println("EndY:", endY, "StartY:", startY, "numRows:", numRows)
+	worldCut := make([][]uint8, numRows)
+	for i := 0; i < numRows; i++ {
+		// Calculate the index in the original slice
+		originalIndex := startY + i
+
+		// Copy the row to the subset
+		worldCut[i] = make([]uint8, len(world[originalIndex]))
+		copy(worldCut[i], world[originalIndex])
+	}
+	fmt.Println("Height of worldCut:", len(worldCut), "Width of worldCut:", len(worldCut[0]))
+	return worldCut
+}
+
+func checkChunkPosition(Begin, End, height int, world [][]uint8) [][]uint8 {
+	var worldCopy [][]uint8
+	if Begin == 0 && End == height-1 {
+		worldCopy = append(createWorldCutCopy(world, height-1, height-1), append(createWorldCutCopy(world, 0, height-1), createWorldCutCopy(world, 0, 0)...)...)
+	} else if Begin == 0 {
+		worldCopy = append(createWorldCutCopy(world, height-1, height-1), createWorldCutCopy(world, Begin, End+1)...)
+	} else if End == height-1 {
+		worldCopy = append(createWorldCutCopy(world, Begin-1, End), createWorldCutCopy(world, 0, 0)...)
+	} else {
+		worldCopy = createWorldCutCopy(world, Begin-1, End+1)
+	}
+	return worldCopy
+}
+
 //Removed c DistributerChannels, p gol.Params as they were only needs for SDL
 //Removed threads arg as it was only needed for parallel
 func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 
 	//fmt.Println("-------------------------------------Remote Distributor Called------------------------------")
-	turnHundred = 0
 
+	turnHundred = 0
+	threads = 1
 	turn = 0
 	worldCopy = createWorldCopy(world)
 	height := len(world)
@@ -149,19 +103,21 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 	chunkSize := height / threads
 	remainingChunk := height % threads
 
+	var bufferedSliceChan = make([]chan [][]uint8, threads)
+
 	clients = make([]*rpc.Client, threads)
 	errs := make([]error, threads)
-	
-		address := make([]string, 8)
-		address[0] = "34.227.67.245:8030"
-		address[1] = "34.207.106.31:8030"
-		address[2] = "54.175.111.179:8030"
-		address[3] = "35.173.183.211:8030"
-		address[4] = "54.209.4.11:8030"
-		address[5] = "54.196.217.191:8030"
-		address[6] = "3.85.77.164:8030"
-		address[7] = "34.207.134.195:8030"
-	
+
+	address := make([]string, 8)
+	address[0] = "54.242.253.12:8040"
+	address[1] = "34.229.159.250:8040"
+	address[2] = "52.23.230.155:8040"
+	address[3] = "54.162.208.37:8040"
+	address[4] = "34.224.78.220:8040"
+	address[5] = "54.226.16.66:8040"
+	address[6] = "34.227.195.170:8040"
+	address[7] = "50.19.31.194:8040"
+
 	for i := 0; i < threads; i++ {
 
 		//port := 8040 + (i * 10)
@@ -196,7 +152,6 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 		}
 
 		//world = parallelCalculateNextState(worldCopy, 0, height, height, width)
-		var bufferedSliceChan = make([]chan [][]uint8, threads)
 		//fmt.Println("STATES ABOUT TO BE CALCULATED")
 		for k := 0; k < threads; k++ {
 			fmt.Println("K=", k, " Threads=", threads)
@@ -207,10 +162,12 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 				fmt.Println("len(worldCopy[0]):", len(worldCopy[0]))
 				fmt.Println("len(worldCopy):", len(worldCopy))
 				bufferedSliceChan[k] = make(chan [][]uint8, 1)
+				toSend := checkChunkPosition(Begin, End-1, height, worldCopy)
 				request := stubs.WorkerRequest{
-					WorldCopy: worldCopy,
-					StartY:    Begin,
-					EndY:      End,
+					WorldCopy: toSend,
+					StartY:    1,
+					EndY:      len(toSend) - 1,
+					Turns:     turns,
 				}
 				response := new(stubs.WorkerResponse)
 				go func(k int, request stubs.WorkerRequest, response *stubs.WorkerResponse, channel chan [][]uint8) {
@@ -225,10 +182,12 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 				Begin := k * chunkSize
 				End := (k+1)*chunkSize + 1
 				bufferedSliceChan[k] = make(chan [][]uint8, 1)
+				toSend := checkChunkPosition(Begin, End-1, height, worldCopy)
 				request := stubs.WorkerRequest{
-					WorldCopy: worldCopy,
-					StartY:    Begin,
-					EndY:      End,
+					WorldCopy: toSend,
+					StartY:    1,
+					EndY:      len(toSend) - 1,
+					Turns:     turns,
 				}
 				response := new(stubs.WorkerResponse)
 				go func(k int, request stubs.WorkerRequest, response *stubs.WorkerResponse, channel chan [][]uint8) {
@@ -243,10 +202,12 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 				Begin := (k * chunkSize) + (k - (threads - remainingChunk))
 				End := (k+1)*chunkSize + (k + 1 - (threads - remainingChunk))
 				bufferedSliceChan[k] = make(chan [][]uint8, 1)
+				toSend := checkChunkPosition(Begin, End-1, height, worldCopy)
 				request := stubs.WorkerRequest{
-					WorldCopy: worldCopy,
-					StartY:    Begin,
-					EndY:      End,
+					WorldCopy: toSend,
+					StartY:    1,
+					EndY:      len(toSend) - 1,
+					Turns:     turns,
 				}
 				response := new(stubs.WorkerResponse)
 				go func(k int, request stubs.WorkerRequest, response *stubs.WorkerResponse, channel chan [][]uint8) {
@@ -284,78 +245,6 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 		sync = true
 
 	}
-	/*
-		}  else if p.Threads > 1 {
-			chunkSize := height / p.Threads
-			remainingChunk := height % p.Threads
-
-			for i := 0; i < turns; i++ {
-				select {
-				case v := <-c.keypress:
-					switch v {
-					case 'p':
-						c.events <- StateChange{CompletedTurns: turn, NewState: Paused}
-						for {
-							switch <-c.keypress {
-							case 'p':
-								c.events <- StateChange{CompletedTurns: turn, NewState: Executing}
-								break
-							}
-							break
-						}
-					case 's':
-						go writeToPgmFile(c, world, height, width, &turn)
-						c.ioCommand <- ioCheckIdle
-						<-c.ioIdle
-					case 'q':
-						c.events <- StateChange{CompletedTurns: turn, NewState: Quitting}
-						writeToPgmFile(c, world, height, width, &turn)
-						c.ioCommand <- ioCheckIdle
-						<-c.ioIdle
-						os.Exit(0)
-					}
-				case <-timer.C:
-					c.events <- AliveCellsCount{CompletedTurns: turn, CellsCount: numberOfAliveCells(world, height, width)}
-				default:
-					var parallelWorld [][]uint8
-					if turns == 0 {
-						//skip section
-					} else {
-						var bufferedSliceChan = make([]chan [][]uint8, p.Threads)
-
-						for k := 0; k < p.Threads; k++ {
-							if k < p.Threads-remainingChunk {
-								Begin := k * chunkSize
-								End := (k + 1) * chunkSize
-								bufferedSliceChan[k] = make(chan [][]uint8)
-								go worker(c, &turn, Begin, End, height, width, worldCopy, bufferedSliceChan[k])
-							} else if k == p.Threads-remainingChunk {
-								Begin := k * chunkSize
-								End := (k+1)*chunkSize + 1
-								bufferedSliceChan[k] = make(chan [][]uint8)
-								go worker(c, &turn, Begin, End, height, width, worldCopy, bufferedSliceChan[k])
-							} else if k > p.Threads-remainingChunk {
-								Begin := (k * chunkSize) + (k - (p.Threads - remainingChunk))
-								End := (k+1)*chunkSize + (k + 1 - (p.Threads - remainingChunk))
-								bufferedSliceChan[k] = make(chan [][]uint8)
-								go worker(c, &turn, Begin, End, height, width, worldCopy, bufferedSliceChan[k])
-							}
-						}
-
-						for i := 0; i < p.Threads; i++ {
-							parallelWorld = append(parallelWorld, <-bufferedSliceChan[i]...)
-						}
-						worldCopy = parallelWorld
-						world = parallelWorld
-						turn++
-						c.events <- TurnComplete{CompletedTurns: turn}
-					}
-				}
-			}
-		}*/
-
-	//Report the final state using FinalTurnCompleteEvent and write bits of world to a PGM file.
-	//writeToPgmFile(c, world, height, width, &turn)
 
 	return world
 }
@@ -415,22 +304,26 @@ func (r *RemoteProcessor) CallRemoteDistributor(request stubs.Request, response 
 
 	time.Sleep(1 * time.Second)
 	reset = false
-	world := request.World //testing purposes only so i dont have to edit the test loop below
+	//world := request.World //testing purposes only so i dont have to edit the test loop below
 	response.World = remoteDistributor(request.World, request.Turns, request.Threads)
+	//fmt.Println("Request:", len(request.World), "x", len(request.World[0]), "Response:", len(response.World), "x", len(response.World[0]))
 	//fmt.Println("DISTRIBUTOR COMPLETE")
 
 	//fmt.Println(turn)
-	test := 0
-	for i, _ := range world {
-		for i2, _ := range world[i] {
-			if world[i][i2] == response.World[i][i2] {
-				test++
+	/*
+		test := 0
+		for i, _ := range world {
+			for i2, _ := range world[i] {
+				if world[i][i2] == response.World[i][i2] {
+					test++
+				}
 			}
 		}
-	}
-	if test == len(world)*len(world[0]) {
-		//fmt.Println("-----------------------FUCK-------------------------")
-	}
+		if test == len(world)*len(world[0]) {
+			//fmt.Println("-----------------------FUCK-------------------------")
+		}
+	*/
+
 	return
 }
 
