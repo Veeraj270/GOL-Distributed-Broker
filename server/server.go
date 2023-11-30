@@ -95,7 +95,6 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 	//fmt.Println("-------------------------------------Remote Distributor Called------------------------------")
 
 	turnHundred = 0
-	threads = 1
 	turn = 0
 	worldCopy = createWorldCopy(world)
 	height := len(world)
