@@ -12,6 +12,8 @@ var WorkerCalculate string = "RemoteWorker.CalculateNextState"
 var WorkerTest string = "RemoteWorker.Test"
 var WorkerClose string = "RemoteWorker.Close"
 
+var HaloExchange string = "RemoteWorker.HaloExchange"
+
 type Request struct {
 	World   [][]uint8
 	Turns   int
@@ -51,10 +53,19 @@ type CloseReq struct{}
 type CloseResp struct{}
 
 type WorkerRequest struct {
-	WorldCopy                   [][]uint8
-	StartY, EndY, Height, Width int
+	WorldCopy           [][]uint8
+	StartY, EndY, Turns int
+	Top, Bottom         bool
 }
 
 type WorkerResponse struct {
 	World [][]uint8
+}
+
+type HaloRequest struct {
+	Halo []uint8
+}
+
+type HaloResponse struct {
+	Halo []uint8
 }
