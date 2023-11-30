@@ -109,14 +109,14 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 	errs := make([]error, threads)
 
 	address := make([]string, 8)
-	address[0] = "54.87.18.157:8040"
-	address[1] = "54.196.92.202:8040"
-	address[2] = "174.129.86.208:8040"
-	address[3] = "54.163.113.47:8040"
-	address[4] = "107.21.90.109:8040"
-	address[5] = "54.175.76.80:8040"
-	address[6] = "34.207.135.188:8040"
-	address[7] = "52.90.226.5:8040"
+	address[0] = "54.87.18.157:8030"
+	address[1] = "54.196.92.202:8030"
+	address[2] = "174.129.86.208:8030"
+	address[3] = "54.163.113.47:8030"
+	address[4] = "107.21.90.109:8030"
+	address[5] = "54.175.76.80:8030"
+	address[6] = "34.207.135.188:8030"
+	address[7] = "52.90.226.5:8030"
 
 	for i := 0; i < threads; i++ {
 
