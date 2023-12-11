@@ -62,7 +62,6 @@ func numberOfAliveCells(world [][]uint8, height, width int) int {
 func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 
 	//fmt.Println("-------------------------------------Remote Distributor Called------------------------------")
-	threads = 4
 	turn = 0
 	worldCopy = createWorldCopy(world)
 	height := len(world)
@@ -73,26 +72,26 @@ func remoteDistributor(world [][]uint8, turns int, threads int) [][]uint8 {
 	clients = make([]*rpc.Client, threads)
 	errs := make([]error, threads)
 
-	/*
+	
 
 		address := make([]string, 8)
-		address[0] = "34.227.67.245:8030"
-		address[1] = "34.207.106.31:8030"
-		address[2] = "54.175.111.179:8030"
-		address[3] = "35.173.183.211:8030"
-		address[4] = "54.209.4.11:8030"
-		address[5] = "54.196.217.191:8030"
-		address[6] = "3.85.77.164:8030"
-		address[7] = "34.207.134.195:8030"
+		address[0] = "3.82.27.85:8040"
+		address[1] = "54.204.155.28:8040"
+		address[2] = "3.90.143.115:8040"
+		address[3] = "34.207.204.117:8040"
+		address[4] = "54.80.187.144:8040"
+		address[5] = "54.196.68.175:8040"
+		address[6] = "54.91.255.100:8040"
+		address[7] = "54.80.108.27:8040"
 
-	*/
+	
 
 	for i := 0; i < threads; i++ {
 
-		port := 8040 + (i * 10)
-		address := "localhost:" + fmt.Sprint(port)
-		fmt.Println(address)
-		clients[i], errs[i] = rpc.Dial("tcp", address)
+		//port := 8040 + (i * 10)
+		//address := "localhost:" + fmt.Sprint(port)
+		fmt.Println(address[i])
+		clients[i], errs[i] = rpc.Dial("tcp", address[i])
 		if errs[i] != nil {
 			fmt.Println("-----------Unable to connect--------------------")
 		}
